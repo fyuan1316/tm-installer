@@ -1,0 +1,79 @@
+apiVersion: install.alauda.io/v1alpha1
+kind: TaskRun
+metadata:
+  name: taskrun-sample
+spec:
+  # Add fields here
+  steps:
+    - resources:
+        - |
+          apiVersion: v1
+          data:
+            deploy_auto.txt: |
+              [config]
+              global_password=123456
+              global_port=22
+              global_user=root
+
+              [roles]
+              10.0.129.65=time-server
+              10.0.128.225=time-client
+          kind: ConfigMap
+          metadata:
+            name: tm-cm1
+            namespace: default
+        - |
+          apiVersion: v1
+          data:
+            deploy_auto.txt: |
+              [config]
+              global_password=123456
+              global_port=22
+              global_user=root
+
+              [roles]
+              10.0.129.85=time-server
+              10.0.128.225=time-client
+          kind: ConfigMap
+          metadata:
+            name: tm-cm2
+            namespace: default
+      job_template:
+        template:
+          metadata:
+            name: DependencyJob
+            namespace: default
+          spec:
+            restartPolicy: OnFailure
+            containers:
+            - args:
+              - -c
+              - "echo hello DependencyJob && ls -l /tm-install/config && cat /tm-install/config/deploy_auto.txt "
+              command:
+              - sh
+              image: alpine:latest
+              imagePullPolicy: Always
+              name: job
+              volumeMounts:
+                - mountPath: /tm-install/config
+                  name: config-volume
+            volumes:
+            - configMap:
+                name: tm-cm1
+              name: config-volume
+    - job_template:
+        template:
+          metadata:
+            name: PlatformJob
+            namespace: default
+          spec:
+            restartPolicy: OnFailure
+            containers:
+              - args:
+                  - -c
+                  - "echo hello PlatformJob"
+                command:
+                  - sh
+                image: alpine:latest
+                imagePullPolicy: Always
+                name: job

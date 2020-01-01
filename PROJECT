@@ -1,0 +1,7 @@
+version: "2"
+domain: alauda.io
+repo: github.com/fyuan1316/tm-installer
+resources:
+- group: install
+  version: v1alpha1
+  kind: TaskRun
